@@ -8,7 +8,7 @@
 
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       background: #0b0f1a;
       color: #e5e7eb;
       margin: 0;
@@ -20,28 +20,17 @@
       padding: 20px;
     }
 
-    h1 {
-      font-size: 28px;
-      margin-bottom: 5px;
-    }
-
-    .subtitle {
-      color: #9ca3af;
-      margin-bottom: 20px;
-    }
-
     .card {
       background: #111827;
       border-radius: 20px;
       padding: 16px;
       margin-bottom: 16px;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      overflow: hidden;
     }
 
     .section-title {
-      font-size: 16px;
-      margin-bottom: 10px;
       color: #9ca3af;
+      margin-bottom: 10px;
     }
 
     .task {
@@ -49,12 +38,9 @@
       margin: 8px 0;
       background: #1f2937;
       border-radius: 12px;
-      font-size: 15px;
-      transition: 0.2s;
-    }
-
-    .task:active {
-      transform: scale(0.98);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .done {
@@ -62,15 +48,21 @@
       text-decoration: line-through;
     }
 
+    .streak {
+      font-size: 12px;
+      color: #fbbf24;
+    }
+
     input, select {
       width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
       padding: 12px;
       margin-top: 8px;
       border-radius: 12px;
       border: none;
       background: #1f2937;
       color: white;
-      font-size: 14px;
     }
 
     button {
@@ -79,10 +71,8 @@
       margin-top: 10px;
       border-radius: 12px;
       border: none;
-      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      background: linear-gradient(135deg,#3b82f6,#6366f1);
       color: white;
-      font-size: 15px;
-      font-weight: 500;
     }
 
     .meal-item {
@@ -96,7 +86,6 @@
       width: auto;
       padding: 4px 8px;
       margin-left: 5px;
-      border-radius: 6px;
       font-size: 12px;
       background: #374151;
     }
@@ -104,30 +93,33 @@
     .actions button:last-child {
       background: #ef4444;
     }
-
-    canvas {
-      margin-top: 10px;
-    }
   </style>
 </head>
 
 <body>
-
 <div class="container">
 
-  <h1>Daily Tracker</h1>
-  <div class="subtitle">Stay consistent, track smarter</div>
+  <h2>Daily Tracker</h2>
 
   <div class="card">
-    <div class="section-title">Morning</div>
-    <div class="task" onclick="toggleTask(this)">Brush Teeth</div>
-    <div class="task" onclick="toggleTask(this)">Skincare</div>
-  </div>
+    <div class="section-title">Habits</div>
 
-  <div class="card">
-    <div class="section-title">Night</div>
-    <div class="task" onclick="toggleTask(this)">Brush Teeth</div>
-    <div class="task" onclick="toggleTask(this)">Skincare</div>
+    <div class="task" onclick="toggleTask(this,'teeth_am')">
+      Brush Teeth AM <span class="streak" id="teeth_am"></span>
+    </div>
+
+    <div class="task" onclick="toggleTask(this,'skin_am')">
+      Skincare AM <span class="streak" id="skin_am"></span>
+    </div>
+
+    <div class="task" onclick="toggleTask(this,'teeth_pm')">
+      Brush Teeth PM <span class="streak" id="teeth_pm"></span>
+    </div>
+
+    <div class="task" onclick="toggleTask(this,'skin_pm')">
+      Skincare PM <span class="streak" id="skin_pm"></span>
+    </div>
+
   </div>
 
   <div class="card">
@@ -155,17 +147,42 @@
 </div>
 
 <script>
+
+// DATE
 function todayKey(offset=0){
   const d=new Date();
   d.setDate(d.getDate()-offset);
   return d.toISOString().split("T")[0];
 }
 
-function toggleTask(el){
+// ---------- HABITS + STREAKS ----------
+function toggleTask(el,key){
   el.classList.toggle("done");
+
+  let data=JSON.parse(localStorage.getItem("streaks"))||{};
+  const today=new Date().toDateString();
+
+  if(!data[key]){
+    data[key]={count:0,last:null};
+  }
+
+  if(data[key].last!==today){
+    data[key].count++;
+    data[key].last=today;
+  }
+
+  localStorage.setItem("streaks",JSON.stringify(data));
+  updateStreakUI();
 }
 
-// MEALS
+function updateStreakUI(){
+  const data=JSON.parse(localStorage.getItem("streaks"))||{};
+  ["teeth_am","skin_am","teeth_pm","skin_pm"].forEach(k=>{
+    document.getElementById(k).innerText = (data[k]?.count||0)+" 🔥";
+  });
+}
+
+// ---------- MEALS ----------
 function addMeal(){
   const meal=document.getElementById("mealInput").value.trim();
   const cal=parseInt(document.getElementById("calInput").value)||0;
@@ -229,7 +246,7 @@ function editMeal(type,index){
   }
 }
 
-// CHART
+// ---------- CHART ----------
 let chart;
 
 function renderChart(){
@@ -259,14 +276,12 @@ function renderChart(){
       datasets:[{
         label:'Calories',
         data:data,
-        borderWidth:2,
         tension:0.4
       }]
     },
     options:{
-      plugins:{
-        legend:{labels:{color:'white'}}
-      },
+      animation:{duration:800},
+      plugins:{legend:{labels:{color:'white'}}},
       scales:{
         x:{ticks:{color:'white'}},
         y:{ticks:{color:'white'}}
@@ -275,8 +290,11 @@ function renderChart(){
   });
 }
 
+// INIT
 displayMeals();
 renderChart();
+updateStreakUI();
+
 </script>
 
 </body>
