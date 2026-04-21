@@ -2,58 +2,86 @@
 <html>
 <head>
   <title>Daily Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      font-family: Arial;
-      text-align: center;
-      background: #f4f4f4;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f172a;
+      color: white;
+      margin: 0;
       padding: 20px;
     }
 
-    .section { margin: 20px 0; }
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 15px;
+      margin: 15px auto;
+      border-radius: 15px;
+      max-width: 400px;
+    }
 
     .task {
-      background: white;
       padding: 12px;
-      margin: 8px auto;
-      width: 260px;
+      margin: 8px 0;
+      background: #334155;
       border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       cursor: pointer;
     }
 
     .done {
-      background: #c8f7c5;
+      background: #22c55e;
       text-decoration: line-through;
     }
 
     input, select {
-      padding: 8px;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
       margin-top: 10px;
+      width: 100%;
     }
 
     button {
-      padding: 8px 15px;
-      margin-top: 10px;
+      padding: 10px;
       border: none;
       border-radius: 8px;
-      background: #333;
+      margin-top: 10px;
+      background: #3b82f6;
       color: white;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .meal-item {
+      display: flex;
+      justify-content: space-between;
+      margin: 5px 0;
+    }
+
+    .small-btn {
+      background: #ef4444;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      padding: 2px 6px;
       cursor: pointer;
     }
 
-    .meal-group {
+    .streak {
+      text-align: center;
       margin-top: 10px;
     }
 
     .summary {
-      background: white;
-      padding: 15px;
-      margin: 10px auto;
-      width: 280px;
+      background: #334155;
+      padding: 10px;
+      margin: 5px 0;
       border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      text-align: left;
     }
   </style>
 </head>
@@ -61,143 +89,189 @@
 
 <h1>Daily Tracker</h1>
 
-<div class="section">
+<div class="card">
   <h3>Morning</h3>
-  <div class="task" onclick="toggleTask(this)">Brush Teeth (AM)</div>
-  <div class="task" onclick="toggleTask(this)">Skincare (AM)</div>
+  <div class="task" onclick="toggleTask(this,0)">Brush Teeth (AM)</div>
+  <div class="task" onclick="toggleTask(this,1)">Skincare (AM)</div>
 </div>
 
-<div class="section">
+<div class="card">
   <h3>Night</h3>
-  <div class="task" onclick="toggleTask(this)">Brush Teeth (PM)</div>
-  <div class="task" onclick="toggleTask(this)">Skincare (PM)</div>
+  <div class="task" onclick="toggleTask(this,2)">Brush Teeth (PM)</div>
+  <div class="task" onclick="toggleTask(this,3)">Skincare (PM)</div>
 </div>
 
-<div class="section">
+<div class="card">
   <h3>Meals</h3>
   <input id="mealInput" placeholder="Enter meal...">
-  <br>
   <select id="mealType">
     <option>Breakfast</option>
     <option>Lunch</option>
     <option>Dinner</option>
   </select>
-  <br>
   <button onclick="addMeal()">Add Meal</button>
-
   <div id="mealList"></div>
 </div>
 
-<div class="section">
+<div class="card">
+  <h3>🔥 Streak</h3>
+  <div class="streak">
+    Current: <span id="streak">0</span> days<br>
+    Best: <span id="best">0</span>
+  </div>
+</div>
+
+<div class="card">
   <h3>Weekly Summary</h3>
-  <button onclick="generateSummary()">Refresh Summary</button>
   <div id="weeklySummary"></div>
 </div>
 
 <script>
-  function todayKey(offset = 0) {
-    const d = new Date();
-    d.setDate(d.getDate() - offset);
-    return d.toISOString().split("T")[0];
+function todayKey(offset=0){
+  const d=new Date();
+  d.setDate(d.getDate()-offset);
+  return d.toISOString().split("T")[0];
+}
+
+// TASKS
+function toggleTask(el,index){
+  el.classList.toggle("done");
+  saveTasks();
+  checkStreak();
+}
+
+function saveTasks(){
+  const tasks=[...document.querySelectorAll(".task")].map(t=>t.classList.contains("done"));
+  localStorage.setItem("tasks-"+todayKey(),JSON.stringify(tasks));
+}
+
+function loadTasks(){
+  const lastDate=localStorage.getItem("lastDate");
+  if(lastDate!==todayKey()){
+    localStorage.setItem("lastDate",todayKey());
+    localStorage.removeItem("tasks-"+todayKey());
   }
 
-  function toggleTask(el) {
-    el.classList.toggle("done");
-    saveTasks();
+  const data=JSON.parse(localStorage.getItem("tasks-"+todayKey()));
+  if(!data)return;
+  document.querySelectorAll(".task").forEach((t,i)=>{
+    if(data[i])t.classList.add("done");
+  });
+}
+
+// MEALS
+function addMeal(){
+  const meal=document.getElementById("mealInput").value.trim();
+  const type=document.getElementById("mealType").value;
+  if(!meal)return;
+
+  const key="meals-"+todayKey();
+  const meals=JSON.parse(localStorage.getItem(key))||{Breakfast:[],Lunch:[],Dinner:[]};
+
+  meals[type].push(meal);
+  localStorage.setItem(key,JSON.stringify(meals));
+  document.getElementById("mealInput").value="";
+  displayMeals();
+}
+
+function displayMeals(){
+  const meals=JSON.parse(localStorage.getItem("meals-"+todayKey()))||{Breakfast:[],Lunch:[],Dinner:[]};
+
+  function render(type){
+    return `<h4>${type}</h4>`+meals[type].map((m,i)=>
+      `<div class="meal-item">${m}
+        <span>
+          <button class="small-btn" onclick="editMeal('${type}',${i})">✏️</button>
+          <button class="small-btn" onclick="deleteMeal('${type}',${i})">x</button>
+        </span>
+      </div>`
+    ).join("");
   }
 
-  function saveTasks() {
-    const tasks = document.querySelectorAll(".task");
-    const data = [];
-    tasks.forEach(t => data.push(t.classList.contains("done")));
-    localStorage.setItem("tasks-" + todayKey(), JSON.stringify(data));
-  }
+  document.getElementById("mealList").innerHTML=
+    render("Breakfast")+render("Lunch")+render("Dinner");
+}
 
-  function loadTasks() {
-    const data = JSON.parse(localStorage.getItem("tasks-" + todayKey()));
-    if (!data) return;
-    const tasks = document.querySelectorAll(".task");
-    tasks.forEach((t, i) => {
-      if (data[i]) t.classList.add("done");
-    });
-  }
+function deleteMeal(type,index){
+  const key="meals-"+todayKey();
+  const meals=JSON.parse(localStorage.getItem(key));
+  meals[type].splice(index,1);
+  localStorage.setItem(key,JSON.stringify(meals));
+  displayMeals();
+}
 
-  function addMeal() {
-    const input = document.getElementById("mealInput");
-    const type = document.getElementById("mealType").value;
-    const meal = input.value.trim();
-    if (!meal) return;
-
-    const key = "meals-" + todayKey();
-    const meals = JSON.parse(localStorage.getItem(key)) || {
-      Breakfast: [],
-      Lunch: [],
-      Dinner: []
-    };
-
-    meals[type].push(meal);
-    localStorage.setItem(key, JSON.stringify(meals));
-
-    input.value = "";
+function editMeal(type,index){
+  const key="meals-"+todayKey();
+  const meals=JSON.parse(localStorage.getItem(key));
+  const newMeal=prompt("Edit meal:",meals[type][index]);
+  if(newMeal){
+    meals[type][index]=newMeal;
+    localStorage.setItem(key,JSON.stringify(meals));
     displayMeals();
   }
+}
 
-  function displayMeals() {
-    const container = document.getElementById("mealList");
-    const meals = JSON.parse(localStorage.getItem("meals-" + todayKey())) || {
-      Breakfast: [],
-      Lunch: [],
-      Dinner: []
-    };
+// STREAK
+function checkStreak(){
+  const allDone=[...document.querySelectorAll(".task")].every(t=>t.classList.contains("done"));
+  if(!allDone)return;
 
-    container.innerHTML = `
-      <div class="meal-group"><h4>Breakfast</h4>${meals.Breakfast.map(m => "<div>"+m+"</div>").join("")}</div>
-      <div class="meal-group"><h4>Lunch</h4>${meals.Lunch.map(m => "<div>"+m+"</div>").join("")}</div>
-      <div class="meal-group"><h4>Dinner</h4>${meals.Dinner.map(m => "<div>"+m+"</div>").join("")}</div>
-    `;
+  let streak=parseInt(localStorage.getItem("streak")||0);
+  let best=parseInt(localStorage.getItem("best")||0);
+  const last=localStorage.getItem("lastComplete");
+
+  const yesterday=new Date();
+  yesterday.setDate(yesterday.getDate()-1);
+
+  if(last===yesterday.toDateString()){
+    streak++;
+  } else if(last!==new Date().toDateString()){
+    streak=1;
   }
 
-  function generateSummary() {
-    let total = {Breakfast:0, Lunch:0, Dinner:0};
-    let html = "";
+  if(streak>best)best=streak;
 
-    for (let i = 0; i < 7; i++) {
-      const key = "meals-" + todayKey(i);
-      const meals = JSON.parse(localStorage.getItem(key)) || {
-        Breakfast: [],
-        Lunch: [],
-        Dinner: []
-      };
+  localStorage.setItem("streak",streak);
+  localStorage.setItem("best",best);
+  localStorage.setItem("lastComplete",new Date().toDateString());
 
-      total.Breakfast += meals.Breakfast.length;
-      total.Lunch += meals.Lunch.length;
-      total.Dinner += meals.Dinner.length;
+  updateStreak();
+}
 
-      html += `
-        <div class="summary">
-          <strong>${todayKey(i)}</strong><br>
-          Breakfast: ${meals.Breakfast.length}<br>
-          Lunch: ${meals.Lunch.length}<br>
-          Dinner: ${meals.Dinner.length}
-        </div>
-      `;
-    }
+function updateStreak(){
+  document.getElementById("streak").innerText=localStorage.getItem("streak")||0;
+  document.getElementById("best").innerText=localStorage.getItem("best")||0;
+}
 
-    html = `
-      <div class="summary">
-        <strong>Totals (Last 7 Days)</strong><br>
-        Breakfast: ${total.Breakfast}<br>
-        Lunch: ${total.Lunch}<br>
-        Dinner: ${total.Dinner}
-      </div>
-    ` + html;
+// WEEKLY
+function generateSummary(){
+  let total={Breakfast:0,Lunch:0,Dinner:0};
+  let html="";
 
-    document.getElementById("weeklySummary").innerHTML = html;
+  for(let i=0;i<7;i++){
+    const meals=JSON.parse(localStorage.getItem("meals-"+todayKey(i)))||{Breakfast:[],Lunch:[],Dinner:[]};
+    total.Breakfast+=meals.Breakfast.length;
+    total.Lunch+=meals.Lunch.length;
+    total.Dinner+=meals.Dinner.length;
+
+    html+=`<div class="summary">
+      ${todayKey(i)}<br>
+      B:${meals.Breakfast.length} L:${meals.Lunch.length} D:${meals.Dinner.length}
+    </div>`;
   }
 
-  loadTasks();
-  displayMeals();
-  generateSummary();
+  html=`<div class="summary"><strong>Totals</strong><br>
+    B:${total.Breakfast} L:${total.Lunch} D:${total.Dinner}
+  </div>`+html;
+
+  document.getElementById("weeklySummary").innerHTML=html;
+}
+
+// INIT
+loadTasks();
+displayMeals();
+updateStreak();
+generateSummary();
 </script>
 
 </body>
