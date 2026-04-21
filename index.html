@@ -1,129 +1,157 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html>
 <head>
   <title>Daily Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #0f172a;
-      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      background: #0b0f1a;
+      color: #e5e7eb;
       margin: 0;
+    }
+
+    .container {
+      max-width: 420px;
+      margin: auto;
       padding: 20px;
     }
 
     h1 {
-      text-align: center;
-      margin-bottom: 10px;
+      font-size: 28px;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      color: #9ca3af;
+      margin-bottom: 20px;
     }
 
     .card {
-      background: #1e293b;
-      padding: 15px;
-      margin: 15px auto;
-      border-radius: 15px;
-      max-width: 400px;
+      background: #111827;
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    .section-title {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #9ca3af;
     }
 
     .task {
-      padding: 12px;
+      padding: 14px;
       margin: 8px 0;
-      background: #334155;
-      border-radius: 10px;
-      cursor: pointer;
+      background: #1f2937;
+      border-radius: 12px;
+      font-size: 15px;
+      transition: 0.2s;
+    }
+
+    .task:active {
+      transform: scale(0.98);
     }
 
     .done {
-      background: #22c55e;
+      background: #16a34a;
       text-decoration: line-through;
     }
 
     input, select {
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      margin-top: 10px;
       width: 100%;
+      padding: 12px;
+      margin-top: 8px;
+      border-radius: 12px;
+      border: none;
+      background: #1f2937;
+      color: white;
+      font-size: 14px;
     }
 
     button {
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      margin-top: 10px;
-      background: #3b82f6;
-      color: white;
-      cursor: pointer;
       width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      color: white;
+      font-size: 15px;
+      font-weight: 500;
     }
 
     .meal-item {
       display: flex;
       justify-content: space-between;
-      margin: 5px 0;
+      margin-top: 6px;
+      font-size: 14px;
     }
 
-    .small-btn {
+    .actions button {
+      width: auto;
+      padding: 4px 8px;
+      margin-left: 5px;
+      border-radius: 6px;
+      font-size: 12px;
+      background: #374151;
+    }
+
+    .actions button:last-child {
       background: #ef4444;
-      border: none;
-      color: white;
-      border-radius: 5px;
-      padding: 2px 6px;
-      cursor: pointer;
     }
 
-    .streak {
-      text-align: center;
+    canvas {
       margin-top: 10px;
-    }
-
-    .summary {
-      background: #334155;
-      padding: 10px;
-      margin: 5px 0;
-      border-radius: 10px;
     }
   </style>
 </head>
+
 <body>
 
-<h1>Daily Tracker</h1>
+<div class="container">
 
-<div class="card">
-  <h3>Morning</h3>
-  <div class="task" onclick="toggleTask(this,0)">Brush Teeth (AM)</div>
-  <div class="task" onclick="toggleTask(this,1)">Skincare (AM)</div>
-</div>
+  <h1>Daily Tracker</h1>
+  <div class="subtitle">Stay consistent, track smarter</div>
 
-<div class="card">
-  <h3>Night</h3>
-  <div class="task" onclick="toggleTask(this,2)">Brush Teeth (PM)</div>
-  <div class="task" onclick="toggleTask(this,3)">Skincare (PM)</div>
-</div>
-
-<div class="card">
-  <h3>Meals</h3>
-  <input id="mealInput" placeholder="Enter meal...">
-  <select id="mealType">
-    <option>Breakfast</option>
-    <option>Lunch</option>
-    <option>Dinner</option>
-  </select>
-  <button onclick="addMeal()">Add Meal</button>
-  <div id="mealList"></div>
-</div>
-
-<div class="card">
-  <h3>🔥 Streak</h3>
-  <div class="streak">
-    Current: <span id="streak">0</span> days<br>
-    Best: <span id="best">0</span>
+  <div class="card">
+    <div class="section-title">Morning</div>
+    <div class="task" onclick="toggleTask(this)">Brush Teeth</div>
+    <div class="task" onclick="toggleTask(this)">Skincare</div>
   </div>
-</div>
 
-<div class="card">
-  <h3>Weekly Summary</h3>
-  <div id="weeklySummary"></div>
+  <div class="card">
+    <div class="section-title">Night</div>
+    <div class="task" onclick="toggleTask(this)">Brush Teeth</div>
+    <div class="task" onclick="toggleTask(this)">Skincare</div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Meals</div>
+
+    <input id="mealInput" placeholder="Meal name">
+    <input id="calInput" type="number" placeholder="Calories">
+
+    <select id="mealType">
+      <option>Breakfast</option>
+      <option>Lunch</option>
+      <option>Dinner</option>
+    </select>
+
+    <button onclick="addMeal()">Add Meal</button>
+
+    <div id="mealList"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Weekly Calories</div>
+    <canvas id="chart"></canvas>
+  </div>
+
 </div>
 
 <script>
@@ -133,45 +161,29 @@ function todayKey(offset=0){
   return d.toISOString().split("T")[0];
 }
 
-// TASKS
-function toggleTask(el,index){
+function toggleTask(el){
   el.classList.toggle("done");
-  saveTasks();
-  checkStreak();
-}
-
-function saveTasks(){
-  const tasks=[...document.querySelectorAll(".task")].map(t=>t.classList.contains("done"));
-  localStorage.setItem("tasks-"+todayKey(),JSON.stringify(tasks));
-}
-
-function loadTasks(){
-  const lastDate=localStorage.getItem("lastDate");
-  if(lastDate!==todayKey()){
-    localStorage.setItem("lastDate",todayKey());
-    localStorage.removeItem("tasks-"+todayKey());
-  }
-
-  const data=JSON.parse(localStorage.getItem("tasks-"+todayKey()));
-  if(!data)return;
-  document.querySelectorAll(".task").forEach((t,i)=>{
-    if(data[i])t.classList.add("done");
-  });
 }
 
 // MEALS
 function addMeal(){
   const meal=document.getElementById("mealInput").value.trim();
+  const cal=parseInt(document.getElementById("calInput").value)||0;
   const type=document.getElementById("mealType").value;
-  if(!meal)return;
+
+  if(!meal) return;
 
   const key="meals-"+todayKey();
   const meals=JSON.parse(localStorage.getItem(key))||{Breakfast:[],Lunch:[],Dinner:[]};
 
-  meals[type].push(meal);
+  meals[type].push({name:meal,cal:cal});
   localStorage.setItem(key,JSON.stringify(meals));
+
   document.getElementById("mealInput").value="";
+  document.getElementById("calInput").value="";
+
   displayMeals();
+  renderChart();
 }
 
 function displayMeals(){
@@ -179,11 +191,12 @@ function displayMeals(){
 
   function render(type){
     return `<h4>${type}</h4>`+meals[type].map((m,i)=>
-      `<div class="meal-item">${m}
-        <span>
-          <button class="small-btn" onclick="editMeal('${type}',${i})">✏️</button>
-          <button class="small-btn" onclick="deleteMeal('${type}',${i})">x</button>
-        </span>
+      `<div class="meal-item">
+        ${m.name} (${m.cal})
+        <div class="actions">
+          <button onclick="editMeal('${type}',${i})">Edit</button>
+          <button onclick="deleteMeal('${type}',${i})">X</button>
+        </div>
       </div>`
     ).join("");
   }
@@ -198,80 +211,72 @@ function deleteMeal(type,index){
   meals[type].splice(index,1);
   localStorage.setItem(key,JSON.stringify(meals));
   displayMeals();
+  renderChart();
 }
 
 function editMeal(type,index){
   const key="meals-"+todayKey();
   const meals=JSON.parse(localStorage.getItem(key));
-  const newMeal=prompt("Edit meal:",meals[type][index]);
-  if(newMeal){
-    meals[type][index]=newMeal;
+
+  const name=prompt("Meal:",meals[type][index].name);
+  const cal=prompt("Calories:",meals[type][index].cal);
+
+  if(name){
+    meals[type][index]={name:name,cal:parseInt(cal)||0};
     localStorage.setItem(key,JSON.stringify(meals));
     displayMeals();
+    renderChart();
   }
 }
 
-// STREAK
-function checkStreak(){
-  const allDone=[...document.querySelectorAll(".task")].every(t=>t.classList.contains("done"));
-  if(!allDone)return;
+// CHART
+let chart;
 
-  let streak=parseInt(localStorage.getItem("streak")||0);
-  let best=parseInt(localStorage.getItem("best")||0);
-  const last=localStorage.getItem("lastComplete");
+function renderChart(){
+  const labels=[];
+  const data=[];
 
-  const yesterday=new Date();
-  yesterday.setDate(yesterday.getDate()-1);
+  for(let i=6;i>=0;i--){
+    const date=todayKey(i);
+    labels.push(date.slice(5));
 
-  if(last===yesterday.toDateString()){
-    streak++;
-  } else if(last!==new Date().toDateString()){
-    streak=1;
+    const meals=JSON.parse(localStorage.getItem("meals-"+date))||{Breakfast:[],Lunch:[],Dinner:[]};
+
+    let total=0;
+    ["Breakfast","Lunch","Dinner"].forEach(t=>{
+      meals[t].forEach(m=> total+=m.cal||0);
+    });
+
+    data.push(total);
   }
 
-  if(streak>best)best=streak;
+  if(chart) chart.destroy();
 
-  localStorage.setItem("streak",streak);
-  localStorage.setItem("best",best);
-  localStorage.setItem("lastComplete",new Date().toDateString());
-
-  updateStreak();
+  chart=new Chart(document.getElementById("chart"),{
+    type:'line',
+    data:{
+      labels:labels,
+      datasets:[{
+        label:'Calories',
+        data:data,
+        borderWidth:2,
+        tension:0.4
+      }]
+    },
+    options:{
+      plugins:{
+        legend:{labels:{color:'white'}}
+      },
+      scales:{
+        x:{ticks:{color:'white'}},
+        y:{ticks:{color:'white'}}
+      }
+    }
+  });
 }
 
-function updateStreak(){
-  document.getElementById("streak").innerText=localStorage.getItem("streak")||0;
-  document.getElementById("best").innerText=localStorage.getItem("best")||0;
-}
-
-// WEEKLY
-function generateSummary(){
-  let total={Breakfast:0,Lunch:0,Dinner:0};
-  let html="";
-
-  for(let i=0;i<7;i++){
-    const meals=JSON.parse(localStorage.getItem("meals-"+todayKey(i)))||{Breakfast:[],Lunch:[],Dinner:[]};
-    total.Breakfast+=meals.Breakfast.length;
-    total.Lunch+=meals.Lunch.length;
-    total.Dinner+=meals.Dinner.length;
-
-    html+=`<div class="summary">
-      ${todayKey(i)}<br>
-      B:${meals.Breakfast.length} L:${meals.Lunch.length} D:${meals.Dinner.length}
-    </div>`;
-  }
-
-  html=`<div class="summary"><strong>Totals</strong><br>
-    B:${total.Breakfast} L:${total.Lunch} D:${total.Dinner}
-  </div>`+html;
-
-  document.getElementById("weeklySummary").innerHTML=html;
-}
-
-// INIT
-loadTasks();
 displayMeals();
-updateStreak();
-generateSummary();
+renderChart();
 </script>
 
 </body>
