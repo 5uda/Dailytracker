@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Daily Tracker</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+
+    .section { margin: 20px 0; }
+
+    .task {
+      background: white;
+      padding: 12px;
+      margin: 8px auto;
+      width: 260px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      cursor: pointer;
+    }
+
+    .done {
+      background: #c8f7c5;
+      text-decoration: line-through;
+    }
+
+    input, select {
+      padding: 8px;
+      margin-top: 10px;
+    }
+
+    button {
+      padding: 8px 15px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #333;
+      color: white;
+      cursor: pointer;
+    }
+
+    .meal-group {
+      margin-top: 10px;
+    }
+
+    .summary {
+      background: white;
+      padding: 15px;
+      margin: 10px auto;
+      width: 280px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Daily Tracker</h1>
+
+<div class="section">
+  <h3>Morning</h3>
+  <div class="task" onclick="toggleTask(this)">Brush Teeth (AM)</div>
+  <div class="task" onclick="toggleTask(this)">Skincare (AM)</div>
+</div>
+
+<div class="section">
+  <h3>Night</h3>
+  <div class="task" onclick="toggleTask(this)">Brush Teeth (PM)</div>
+  <div class="task" onclick="toggleTask(this)">Skincare (PM)</div>
+</div>
+
+<div class="section">
+  <h3>Meals</h3>
+  <input id="mealInput" placeholder="Enter meal...">
+  <br>
+  <select id="mealType">
+    <option>Breakfast</option>
+    <option>Lunch</option>
+    <option>Dinner</option>
+  </select>
+  <br>
+  <button onclick="addMeal()">Add Meal</button>
+
+  <div id="mealList"></div>
+</div>
+
+<div class="section">
+  <h3>Weekly Summary</h3>
+  <button onclick="generateSummary()">Refresh Summary</button>
+  <div id="weeklySummary"></div>
+</div>
+
+<script>
+  function todayKey(offset = 0) {
+    const d = new Date();
+    d.setDate(d.getDate() - offset);
+    return d.toISOString().split("T")[0];
+  }
+
+  function toggleTask(el) {
+    el.classList.toggle("done");
+    saveTasks();
+  }
+
+  function saveTasks() {
+    const tasks = document.querySelectorAll(".task");
+    const data = [];
+    tasks.forEach(t => data.push(t.classList.contains("done")));
+    localStorage.setItem("tasks-" + todayKey(), JSON.stringify(data));
+  }
+
+  function loadTasks() {
+    const data = JSON.parse(localStorage.getItem("tasks-" + todayKey()));
+    if (!data) return;
+    const tasks = document.querySelectorAll(".task");
+    tasks.forEach((t, i) => {
+      if (data[i]) t.classList.add("done");
+    });
+  }
+
+  function addMeal() {
+    const input = document.getElementById("mealInput");
+    const type = document.getElementById("mealType").value;
+    const meal = input.value.trim();
+    if (!meal) return;
+
+    const key = "meals-" + todayKey();
+    const meals = JSON.parse(localStorage.getItem(key)) || {
+      Breakfast: [],
+      Lunch: [],
+      Dinner: []
+    };
+
+    meals[type].push(meal);
+    localStorage.setItem(key, JSON.stringify(meals));
+
+    input.value = "";
+    displayMeals();
+  }
+
+  function displayMeals() {
+    const container = document.getElementById("mealList");
+    const meals = JSON.parse(localStorage.getItem("meals-" + todayKey())) || {
+      Breakfast: [],
+      Lunch: [],
+      Dinner: []
+    };
+
+    container.innerHTML = `
+      <div class="meal-group"><h4>Breakfast</h4>${meals.Breakfast.map(m => "<div>"+m+"</div>").join("")}</div>
+      <div class="meal-group"><h4>Lunch</h4>${meals.Lunch.map(m => "<div>"+m+"</div>").join("")}</div>
+      <div class="meal-group"><h4>Dinner</h4>${meals.Dinner.map(m => "<div>"+m+"</div>").join("")}</div>
+    `;
+  }
+
+  function generateSummary() {
+    let total = {Breakfast:0, Lunch:0, Dinner:0};
+    let html = "";
+
+    for (let i = 0; i < 7; i++) {
+      const key = "meals-" + todayKey(i);
+      const meals = JSON.parse(localStorage.getItem(key)) || {
+        Breakfast: [],
+        Lunch: [],
+        Dinner: []
+      };
+
+      total.Breakfast += meals.Breakfast.length;
+      total.Lunch += meals.Lunch.length;
+      total.Dinner += meals.Dinner.length;
+
+      html += `
+        <div class="summary">
+          <strong>${todayKey(i)}</strong><br>
+          Breakfast: ${meals.Breakfast.length}<br>
+          Lunch: ${meals.Lunch.length}<br>
+          Dinner: ${meals.Dinner.length}
+        </div>
+      `;
+    }
+
+    html = `
+      <div class="summary">
+        <strong>Totals (Last 7 Days)</strong><br>
+        Breakfast: ${total.Breakfast}<br>
+        Lunch: ${total.Lunch}<br>
+        Dinner: ${total.Dinner}
+      </div>
+    ` + html;
+
+    document.getElementById("weeklySummary").innerHTML = html;
+  }
+
+  loadTasks();
+  displayMeals();
+  generateSummary();
+</script>
+
+</body>
+</html>
